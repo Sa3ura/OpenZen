@@ -190,7 +190,9 @@ extends Screen {
     private void drawPanelGlow(GuiGraphics guiGraphics, int panelX, int panelY, float partialTicks, float alpha) {
         int panelWidth = (int)(600.0f * this.currentScale);
         int panelHeight = (int)(400.0f * this.currentScale);
-        TextGlow.drawBackground(guiGraphics.pose(), panelX, panelY, panelWidth, panelHeight, 12.0f * this.currentScale, alpha);
+        float radius = 12.0f * this.currentScale;
+        RenderUtil.drawBlurredRect(guiGraphics.pose(), panelX, panelY, panelWidth, panelHeight, radius, 8.0f, alpha, 0);
+        TextGlow.drawBackground(guiGraphics.pose(), panelX, panelY, panelWidth, panelHeight, radius, alpha);
     }
 
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
@@ -375,7 +377,9 @@ extends Screen {
             int searchHeight = (int)(20.0f * this.currentScale);
             int searchX = panelX + (panelWidth - searchWidth) / 2;
             int searchY = panelY + panelHeight + (int)(15.0f * this.currentScale);
-            TextGlow.drawBackground(guiGraphics.pose(), searchX, searchY, searchWidth, searchHeight, 8.0f * this.currentScale, alpha);
+            float searchRadius = 8.0f * this.currentScale;
+            RenderUtil.drawBlurredRect(guiGraphics.pose(), searchX, searchY, searchWidth, searchHeight, searchRadius, 8.0f, alpha, 0);
+            TextGlow.drawBackground(guiGraphics.pose(), searchX, searchY, searchWidth, searchHeight, searchRadius, alpha);
             Renderer.renderConsumer((drawContext -> {
                 FontRenderer iconFont = FontPresets.materialIcons(20.0f * this.currentScale);
                 String iconText = "\uE8B6";
