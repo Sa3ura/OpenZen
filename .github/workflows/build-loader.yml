@@ -111,18 +111,48 @@ jobs:
           Write-Host "OPENZEN_BUILD_REV = $env:OPENZEN_BUILD_REVISION"
           .\gradlew.bat --no-daemon clean dll upxCompress
 
-      - name: Show artifact info
+      # Rename the two distributable artifacts so their final filenames carry
+      # the build sha. We rename rather than re-publish at build time so the
+      # local `./gradlew dll` workflow keeps producing stable filenames.
+      - name: Stage release artifacts
         shell: pwsh
         run: |
-          $exe = "build\dist\OpenZenLoader.exe"
-          if (-not (Test-Path $exe)) { throw "missing $exe" }
-          $sz = (Get-Item $exe).Length
-          Write-Host ("OpenZenLoader.exe: {0:N0} bytes ({1:N2} MB)" -f $sz, ($sz/1MB))
+          $sha = "${{ steps.rev.outputs.sha }}"
+          $exeSrc = "build\dist\OpenZenLoader.exe"
+          $jarSrc = "build\libs\hey-1.0.jar"
+          if (-not (Test-Path $exeSrc)) { throw "missing $exeSrc" }
+          if (-not (Test-Path $jarSrc)) { throw "missing $jarSrc" }
 
-      - name: Upload OpenZenLoader.exe
+          $release = "build\release"
+          New-Item -ItemType Directory -Force -Path $release | Out-Null
+          $exeDst = Join-Path $release "OpenZenLoader-$sha.exe"
+          $jarDst = Join-Path $release "OpenZen-$sha.jar"
+          Copy-Item -Force $exeSrc $exeDst
+          Copy-Item -Force $jarSrc $jarDst
+
+          $exeSz = (Get-Item $exeDst).Length
+          $jarSz = (Get-Item $jarDst).Length
+          Write-Host ("OpenZenLoader-{0}.exe : {1:N0} bytes ({2:N2} MB)" -f $sha, $exeSz, ($exeSz/1MB))
+          Write-Host ("OpenZen-{0}.jar       : {1:N0} bytes ({2:N2} MB)" -f $sha, $jarSz, ($jarSz/1MB))
+
+      # NOTE: actions/upload-artifact always wraps its content in a zip; that
+      # is a platform limitation we cannot disable. By giving each artifact a
+      # single file whose name already encodes the sha, the download is
+      # OpenZenLoader-<sha>.exe.zip / OpenZen-<sha>.jar.zip, each containing
+      # just the named file (no nested directory). For raw exe/jar downloads
+      # without the zip wrapper, attach to a GitHub Release instead.
+      - name: Upload OpenZenLoader exe
         uses: actions/upload-artifact@v4
         with:
-          name: OpenZenLoader-${{ steps.rev.outputs.sha }}
-          path: build/dist/OpenZenLoader.exe
+          name: OpenZenLoader-${{ steps.rev.outputs.sha }}.exe
+          path: build/release/OpenZenLoader-${{ steps.rev.outputs.sha }}.exe
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Upload OpenZen jar
+        uses: actions/upload-artifact@v4
+        with:
+          name: OpenZen-${{ steps.rev.outputs.sha }}.jar
+          path: build/release/OpenZen-${{ steps.rev.outputs.sha }}.jar
           if-no-files-found: error
           retention-days: 30
