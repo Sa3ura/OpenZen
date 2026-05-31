@@ -22,7 +22,6 @@ extends Module {
 
     public NameProtect() {
         super("NameProtect", Category.RENDER);
-        this.setEnabled(true);
         INSTANCE = this;
     }
 
